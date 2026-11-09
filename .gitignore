@@ -1,0 +1,23 @@
+# macOS / editor metadata
+.DS_Store
+.idea/
+.vscode/
+.ipynb_checkpoints/
+
+# Python build artefacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Generated outputs
+output/
+predictions*.csv
+*.log
+
+# Generated ESM-2 embeddings (large, reproducible from the FASTA files)
+data/esm_embeddings/
+
+# Local assistant workspace metadata (not part of the release)
+.workbuddy/
