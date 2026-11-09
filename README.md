@@ -1,6 +1,19 @@
-# AMP-GATE: HeteroTri-Fusion AMP Quantitative Activity Regressor
+# AMP-GATE
+
+**Gated Adaptive Transfer Ensemble for AMP Activity Regression**
 
 A PyTorch regressor that predicts the **quantitative antimicrobial activity** of a peptide sequence from three heterogeneous feature views, fused by sample-adaptive gated cross-attention.
+
+## Name
+
+**AMP** stands for antimicrobial peptide; **GATE** expands as follows.
+
+| | Term | Meaning |
+| --- | --- | --- |
+| **G** | Gated | The sample-adaptive gated cross-attention mechanism at the core of the model. |
+| **A** | Adaptive | Dynamic, per-peptide allocation of weights across the three modalities. |
+| **T** | Transfer | Transfer of pretrained ESM-2 semantic representations into the regression model. |
+| **E** | Ensemble | Fusion of the three heterogeneous modality branches into a single predictor. |
 
 ## Background
 
@@ -29,19 +42,19 @@ By default, training and evaluation use the datasets shipped in `data/`. The inc
 
 ```
 AMP-GATE/
-├── Train_HeteroTriFusion_Regressor.py    # model, metrics, training entry point
-├── Predict_HeteroTriFusion_Regressor.py # streaming inference entry point
+├── train.py                    # model, metrics, training entry point
+├── predict.py                  # streaming inference entry point
 ├── README.md
 ├── LICENSE
 ├── requirements.txt
 ├── .gitignore
 ├── data/
-│   ├── train.csv / test.csv             # training and evaluation datasets
-│   └── train.fasta / test.fasta         # matching sequences
+│   ├── train.csv / test.csv    # training and evaluation datasets
+│   └── train.fasta / test.fasta# matching sequences
 ├── model/
-│   ├── best_hetero_regressor.pth        # example checkpoint (~26 MB)
-│   └── test_metrics_summary.csv         # metrics recorded for that checkpoint
-└── output/                              # created by training (git-ignored)
+│   ├── amp_gate.pth            # example checkpoint (~26 MB)
+│   └── test_metrics_summary.csv# metrics recorded for that checkpoint
+└── output/                     # created by training (git-ignored)
 ```
 
 ## Requirements
@@ -103,14 +116,14 @@ For large datasets, batch the sequences before extraction. Embeddings are not st
 ## Training
 
 ```bash
-python Train_HeteroTriFusion_Regressor.py \
+python train.py \
   --train_csv data/train.csv \
   --test_csv data/test.csv \
   --embedding_dir data/esm_embeddings \
   --output_dir output
 ```
 
-The defaults train on `data/train.csv` and evaluate on `data/test.csv`, so the same run is simply `python Train_HeteroTriFusion_Regressor.py`.
+The defaults train on `data/train.csv` and evaluate on `data/test.csv`, so the same run is simply `python train.py`.
 
 ### Training parameters
 
@@ -150,7 +163,7 @@ The device is selected automatically in the order CUDA → MPS → CPU.
 
 | File | Content |
 | --- | --- |
-| `best_hetero_regressor.pth` | Best checkpoint: model weights, optimiser state, epoch, best score and full arguments |
+| `amp_gate.pth` | Best checkpoint: model weights, optimiser state, epoch, best score and full arguments |
 | `training_history_log.csv` | Per-epoch train/validation metrics, gate weights and learning rate |
 | `test_predictions.csv` | Independent-test predictions, residuals, gate weights and auxiliary predictions |
 | `test_metrics_summary.csv` | Final metrics for the overall test set and the active-AMP subset |
@@ -159,23 +172,23 @@ The device is selected automatically in the order CUDA → MPS → CPU.
 
 ```bash
 # FASTA input
-python Predict_HeteroTriFusion_Regressor.py -i data/test.fasta -o predictions.csv
+python predict.py -i data/test.fasta -o predictions.csv
 
 # CSV input containing a `value` column: metrics are computed automatically
-python Predict_HeteroTriFusion_Regressor.py -i data/test.csv -o predictions_eval.csv
+python predict.py -i data/test.csv -o predictions_eval.csv
 
 # A single sequence
-python Predict_HeteroTriFusion_Regressor.py -i RKGLQKLVGRVHRLLRK -o predictions_single.csv
+python predict.py -i RKGLQKLVGRVHRLLRK -o predictions_single.csv
 ```
 
-Supported inputs: `.fasta/.fa/.fas/.fna`, `.csv`, `.tsv/.txt` (tab-separated), a raw sequence string, or a Python list of `(id, sequence)` tuples when calling `run_streaming_hetero_regression()` programmatically.
+Supported inputs: `.fasta/.fa/.fas/.fna`, `.csv`, `.tsv/.txt` (tab-separated), a raw sequence string, or a Python list of `(id, sequence)` tuples when calling `run_streaming_prediction()` programmatically.
 
 ### Prediction parameters
 
 | Argument | Default | Description |
 | --- | --- | --- |
 | `-i`, `--input` | *required* | FASTA / CSV / TSV file, or a peptide sequence string |
-| `-m`, `--model_path` | `model/best_hetero_regressor.pth` | Trained checkpoint (`.pth`) |
+| `-m`, `--model_path` | `model/amp_gate.pth` | Trained checkpoint (`.pth`) |
 | `-o`, `--output` | `predictions.csv` | Output CSV path |
 | `--esm_model_path` | `None` | Local ESM-2 weights; if omitted, hub/cache weights are used |
 | `--esm_name` | `esm2_t12_35M_UR50D` | ESM architecture: `esm2_t6_8M_UR50D`, `esm2_t12_35M_UR50D`, `esm2_t30_150M_UR50D`, `esm2_t33_650M_UR50D` |

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Streaming inference for the HeteroTri-Fusion AMP activity regressor.
+"""Streaming inference for AMP-GATE.
 
 ESM-2 embeddings are extracted on the fly from FASTA, CSV/TSV or a single
 peptide string. Predictions are written batch by batch to keep memory usage
@@ -52,8 +52,8 @@ logger = logging.getLogger(__name__)
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
 
-from Train_HeteroTriFusion_Regressor import (  # noqa: E402
-    HeteroTriFusionAMPRegressor,
+from train import (  # noqa: E402
+    AMPGATERegressor,
     AA_TO_IDX
 )
 
@@ -168,7 +168,7 @@ def load_local_or_hub_esm(model_path=None, model_name="esm2_t12_35M_UR50D"):
     return esm_model, alphabet
 
 
-def run_streaming_hetero_regression(
+def run_streaming_prediction(
     input_source,
     model_path,
     output_csv,
@@ -206,7 +206,7 @@ def run_streaming_hetero_regression(
     esm_in_dim = state_dict.get("branch_esm.proj.0.weight", torch.zeros((256, 480))).shape[1]
     feat_dim = state_dict.get("branch_esm.proj.0.weight", torch.zeros((256, 480))).shape[0]
 
-    regressor = HeteroTriFusionAMPRegressor(
+    regressor = AMPGATERegressor(
         esm_dim=esm_in_dim,
         feat_dim=feat_dim,
         nhead=nhead,
@@ -305,11 +305,11 @@ def run_streaming_hetero_regression(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Stream Prediction Engine for HeteroTri-Fusion AMP Regressor with Localized ESM-2 Extraction",
+        description="AMP-GATE: streaming AMP activity prediction with on-the-fly ESM-2 extraction",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument("-i", "--input", type=str, required=True, help="Input FASTA, CSV/TSV, or peptide sequence string")
-    parser.add_argument("-m", "--model_path", type=str, default="model/best_hetero_regressor.pth", help="Trained model path (.pth)")
+    parser.add_argument("-m", "--model_path", type=str, default="model/amp_gate.pth", help="Trained model path (.pth)")
     parser.add_argument("-o", "--output", type=str, default="predictions.csv", help="Output CSV path")
     parser.add_argument("--esm_model_path", type=str, default=None, help="Local ESM-2 weights path")
     parser.add_argument("--esm_name", type=str, default="esm2_t12_35M_UR50D", help="ESM model architecture name")
@@ -322,7 +322,7 @@ def main():
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-    run_streaming_hetero_regression(
+    run_streaming_prediction(
         input_source=args.input,
         model_path=args.model_path,
         output_csv=args.output,

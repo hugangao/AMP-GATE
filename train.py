@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Training entry point for the HeteroTri-Fusion AMP activity regressor.
+"""Training entry point for AMP-GATE (Gated Adaptive Transfer Ensemble for AMP Activity Regression).
 
 Three heterogeneous encoders (ESM-2 semantics, physicochemical scales and
 one-hot sequence motifs) are combined by sample-adaptive gated cross-attention.
@@ -426,7 +426,7 @@ class SampleAdaptiveCrossModalFusion(nn.Module):
 
 
 # --- Main regression model ---
-class HeteroTriFusionAMPRegressor(nn.Module):
+class AMPGATERegressor(nn.Module):
     def __init__(self, esm_dim=480, feat_dim=256, nhead=4, dropout=0.2, gate_type="temp_softmax", gate_temp=1.2):
         super().__init__()
         phys_table = build_phys_embedding_table()
@@ -652,7 +652,7 @@ def evaluate(model, loader, criterion, aux_weight, device):
 # --- Command-line entry point ---
 def main():
     parser = argparse.ArgumentParser(
-        description="HeteroTri-Fusion AMP Quantitative Activity Regressor (Specialized Architectures for Diverse Features)",
+        description="AMP-GATE: Gated Adaptive Transfer Ensemble for AMP Activity Regression",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
@@ -755,8 +755,8 @@ def main():
     val_loader = DataLoader(val_subset, batch_size=args.batch_size, shuffle=False, collate_fn=amp_reg_collate_fn)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, collate_fn=amp_reg_collate_fn)
 
-    # Build the heterogeneous model.
-    model = HeteroTriFusionAMPRegressor(
+    # Build the AMP-GATE model.
+    model = AMPGATERegressor(
         esm_dim=args.esm_dim,
         feat_dim=args.feat_dim,
         nhead=args.nhead,
@@ -787,7 +787,7 @@ def main():
     best_score = -float("inf") if higher_is_better else float("inf")
     patience_counter = 0
     best_epoch = 0
-    best_model_path = os.path.join(args.output_dir, "best_hetero_regressor.pth")
+    best_model_path = os.path.join(args.output_dir, "amp_gate.pth")
 
     history_records = []
     logger.info("Training for up to %d epochs.", args.epochs)
